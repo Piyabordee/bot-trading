@@ -1,0 +1,22 @@
+# config/paper_config.yaml
+# Paper Trading Configuration
+
+# Trading settings
+mode: paper
+symbols:
+  - AAPL
+  - MSFT
+  - GOOGL
+
+# Risk limits
+risk:
+  max_position_size: 1000
+  max_portfolio_exposure: 0.2
+  daily_loss_limit: 500
+
+# Strategy settings
+strategy:
+  name: "demo_strategy"
+  parameters:
+    lookback_period: 20
+    confidence_threshold: 0.7

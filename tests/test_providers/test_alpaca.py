@@ -1,4 +1,5 @@
 """Tests for Alpaca provider adapter."""
+
 import os
 import pytest
 from decimal import Decimal

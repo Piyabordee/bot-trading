@@ -6,11 +6,9 @@ in CI/CD unless credentials are available.
 
 import os
 import pytest
-from datetime import date, datetime
-from decimal import Decimal
+from datetime import date
 
 from bot_trading.providers.alpaca import AlpacaProvider
-from bot_trading.exceptions import APIError
 
 
 @pytest.mark.skipif(

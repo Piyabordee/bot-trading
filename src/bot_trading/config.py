@@ -3,6 +3,7 @@
 IMPORTANT: This is a paper-trading-only demo bot.
 Live trading paths should remain disabled unless explicitly approved.
 """
+
 import os
 from dataclasses import dataclass
 from functools import lru_cache
@@ -33,7 +34,9 @@ class Config:
             self.trading_mode = "paper"
 
         self.max_position_size = float(os.getenv("MAX_POSITION_SIZE", str(self.max_position_size)))
-        self.max_portfolio_exposure = float(os.getenv("MAX_PORTFOLIO_EXPOSURE", str(self.max_portfolio_exposure)))
+        self.max_portfolio_exposure = float(
+            os.getenv("MAX_PORTFOLIO_EXPOSURE", str(self.max_portfolio_exposure))
+        )
         self.daily_loss_limit = float(os.getenv("DAILY_LOSS_LIMIT", str(self.daily_loss_limit)))
         self.log_level = os.getenv("LOG_LEVEL", self.log_level)
 

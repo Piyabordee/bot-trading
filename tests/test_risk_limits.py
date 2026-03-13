@@ -1,4 +1,5 @@
 """Tests for risk limits module."""
+
 from decimal import Decimal
 from bot_trading.risk.limits import RiskLimits
 
@@ -23,7 +24,7 @@ def test_risk_limits_enforces_portfolio_exposure():
     limits = RiskLimits(
         max_position_size=Decimal("1000"),
         max_portfolio_exposure=Decimal("0.2"),
-        portfolio_value=Decimal("100000")
+        portfolio_value=Decimal("100000"),
     )
     result = limits.check_portfolio_exposure(new_value=Decimal("25000"))
     assert result.allowed is False

@@ -10,6 +10,7 @@ TODO: Implement actual order submission
 TODO: Add retry logic for failed orders
 TODO: Add order status tracking
 """
+
 import logging
 from dataclasses import dataclass
 
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExecutionResult:
     """Result of an execution attempt."""
+
     executed: bool
     signal: Signal
     reason: str = ""
@@ -66,26 +68,18 @@ class Executor:
         # Validate signal
         if signal.action not in ("buy", "sell"):
             return ExecutionResult(
-                executed=False,
-                signal=signal,
-                reason=f"Invalid action: {signal.action}"
+                executed=False, signal=signal, reason=f"Invalid action: {signal.action}"
             )
 
         if not signal.quantity:
-            return ExecutionResult(
-                executed=False,
-                signal=signal,
-                reason="Signal has no quantity"
-            )
+            return ExecutionResult(executed=False, signal=signal, reason="Signal has no quantity")
 
         # Check risk limits
         size_check = self.risk_limits.check_order_size(signal.quantity)
         if not size_check.allowed:
             logger.warning(f"Order rejected by risk limits: {size_check.reason}")
             return ExecutionResult(
-                executed=False,
-                signal=signal,
-                reason=f"Risk check failed: {size_check.reason}"
+                executed=False, signal=signal, reason=f"Risk check failed: {size_check.reason}"
             )
 
         # Check for duplicates
@@ -95,7 +89,7 @@ class Executor:
             return ExecutionResult(
                 executed=False,
                 signal=signal,
-                reason=f"Duplicate check failed: {duplicate_check.reason}"
+                reason=f"Duplicate check failed: {duplicate_check.reason}",
             )
 
         # TODO: Submit actual order to provider
@@ -107,5 +101,5 @@ class Executor:
         return ExecutionResult(
             executed=False,  # Until full implementation
             signal=signal,
-            reason="TODO: Order submission not yet implemented"
+            reason="TODO: Order submission not yet implemented",
         )

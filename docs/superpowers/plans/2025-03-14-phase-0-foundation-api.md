@@ -4,9 +4,9 @@
 
 **Goal:** Implement complete Alpaca API integration with historical data fetching, order history, and testing infrastructure.
 
-**Architecture:** Update BaseProvider abstract class with new data models (Bar, EquityPoint) and methods (get_historical_bars, get_order_history), then implement fully in AlpacaProvider using alpaca-trade-api library. Create MockProvider for isolated testing.
+**Architecture:** Update BaseProvider abstract class with new data models (Bar, EquityPoint) and methods (get_historical_bars, get_order_history), then implement fully in AlpacaProvider using alpaca-py library (official Alpaca Python SDK). Create MockProvider for isolated testing.
 
-**Tech Stack:** Python 3.11+, alpaca-trade-api, pytest, Decimal for precision
+**Tech Stack:** Python 3.11+, alpaca-py (official SDK), pytest, Decimal for precision
 
 ---
 
@@ -584,7 +584,7 @@ def test_get_order_history_returns_list():
     # This test uses mocking - actual API call tests in integration tests
     from unittest.mock import Mock, patch
 
-    with patch('bot_trading.providers.alpaca.TradingClient') as mock_client:
+    with patch('alpaca.trading.client.TradingClient') as mock_client:
         mock_instance = Mock()
         mock_client.return_value = mock_instance
 
@@ -616,7 +616,7 @@ def test_get_order_history_handles_api_error():
     """Should raise APIError when API call fails."""
     from unittest.mock import Mock, patch
 
-    with patch('bot_trading.providers.alpaca.TradingClient') as mock_client:
+    with patch('alpaca.trading.client.TradingClient') as mock_client:
         mock_instance = Mock()
         mock_client.return_value = mock_instance
         mock_instance.get_orders.side_effect = Exception("API Error")
@@ -630,7 +630,7 @@ def test_get_order_history_empty_result():
     """Should return empty list when no orders."""
     from unittest.mock import Mock, patch
 
-    with patch('bot_trading.providers.alpaca.TradingClient') as mock_client:
+    with patch('alpaca.trading.client.TradingClient') as mock_client:
         mock_instance = Mock()
         mock_client.return_value = mock_instance
         mock_instance.get_orders.return_value = []
@@ -678,7 +678,7 @@ def get_order_history(self, days: int = 7) -> list[Order]:
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
 
-        # Use alpaca-trade-api to get orders
+        # Use alpaca-py to get orders
         request_params = GetOrdersRequest(
             status="all",
             after=start_time,
@@ -724,7 +724,7 @@ Expected: All 3 tests PASS
 git add src/bot_trading/providers/alpaca.py tests/test_providers/test_alpaca_order_history.py
 git commit -m "feat: implement get_order_history in AlpacaProvider
 
-Add order history retrieval using alpaca-trade-api:
+Add order history retrieval using alpaca-py:
 - Fetch orders for last N days
 - Convert API response to Order dataclass
 - Handle API errors with APIError exception
@@ -761,7 +761,7 @@ def test_get_historical_bars_returns_bar_objects():
     """Should return list of Bar objects with OHLCV data."""
     from unittest.mock import Mock, patch
 
-    with patch('bot_trading.providers.alpaca.StockHistoricalDataClient') as mock_data_client:
+    with patch('alpaca.data.historical.StockHistoricalDataClient') as mock_data_client:
         mock_instance = Mock()
         mock_data_client.return_value = mock_instance
 
@@ -801,7 +801,7 @@ def test_get_historical_bars_empty_result():
     """Should return empty list when no data available."""
     from unittest.mock import Mock, patch
 
-    with patch('bot_trading.providers.alpaca.StockHistoricalDataClient') as mock_data_client:
+    with patch('alpaca.data.historical.StockHistoricalDataClient') as mock_data_client:
         mock_instance = Mock()
         mock_data_client.return_value = mock_instance
 
@@ -836,7 +836,7 @@ def test_get_historical_bars_handles_api_error():
     """Should raise APIError when API call fails."""
     from unittest.mock import Mock, patch
 
-    with patch('bot_trading.providers.alpaca.StockHistoricalDataClient') as mock_data_client:
+    with patch('alpaca.data.historical.StockHistoricalDataClient') as mock_data_client:
         mock_instance = Mock()
         mock_data_client.return_value = mock_instance
         mock_instance.get_stock_bars.side_effect = Exception("API Error")
@@ -1427,7 +1427,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0",
     "requests>=2.31.0",
-    "alpaca-trade-api>=3.0.0",
+    "alpaca-py>=0.9.0",
 ]
 
 [project.optional-dependencies]

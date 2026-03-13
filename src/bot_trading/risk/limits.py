@@ -9,6 +9,7 @@ Enforces:
 TODO: Add daily loss limit tracking
 TODO: Add market hours validation
 """
+
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -18,6 +19,7 @@ from decimal import Decimal
 @dataclass
 class RiskCheckResult:
     """Result of a risk limit check."""
+
     allowed: bool
     reason: str = ""
 
@@ -25,6 +27,7 @@ class RiskCheckResult:
 @dataclass
 class OrderRecord:
     """Record of a submitted order for duplicate detection."""
+
     symbol: str
     side: str
     timestamp: datetime
@@ -68,7 +71,7 @@ class RiskLimits:
         if quantity > self.max_position_size:
             return RiskCheckResult(
                 allowed=False,
-                reason=f"Order size {quantity} exceeds maximum {self.max_position_size}"
+                reason=f"Order size {quantity} exceeds maximum {self.max_position_size}",
             )
         return RiskCheckResult(allowed=True)
 
@@ -92,7 +95,7 @@ class RiskLimits:
         if total_exposure > max_allowed:
             return RiskCheckResult(
                 allowed=False,
-                reason=f"Total exposure {total_exposure} exceeds maximum {max_allowed}"
+                reason=f"Total exposure {total_exposure} exceeds maximum {max_allowed}",
             )
         return RiskCheckResult(allowed=True)
 
@@ -120,7 +123,7 @@ class RiskLimits:
             if record.symbol == symbol and record.side == side:
                 return RiskCheckResult(
                     allowed=False,
-                    reason=f"Duplicate order for {symbol} {side} within {within_seconds}s"
+                    reason=f"Duplicate order for {symbol} {side} within {within_seconds}s",
                 )
 
         return RiskCheckResult(allowed=True)
@@ -132,11 +135,7 @@ class RiskLimits:
             symbol: Trading symbol
             side: Order side
         """
-        self._order_history.append(OrderRecord(
-            symbol=symbol,
-            side=side,
-            timestamp=datetime.now()
-        ))
+        self._order_history.append(OrderRecord(symbol=symbol, side=side, timestamp=datetime.now()))
 
         # Clean old records
         cutoff = datetime.now() - timedelta(seconds=300)  # Keep 5 minutes

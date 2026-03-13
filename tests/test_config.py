@@ -1,4 +1,5 @@
 """Tests for configuration module."""
+
 import os
 from bot_trading.config import Config, get_config
 

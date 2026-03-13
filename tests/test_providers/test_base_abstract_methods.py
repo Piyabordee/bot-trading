@@ -4,6 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from bot_trading.providers.base import BaseProvider, Bar, Order, Account, Position
 
+
 def test_base_provider_requires_get_historical_bars():
     """Concrete provider must implement get_historical_bars."""
 
@@ -13,7 +14,7 @@ def test_base_provider_requires_get_historical_bars():
                 equity=Decimal("100000"),
                 cash=Decimal("100000"),
                 buying_power=Decimal("100000"),
-                portfolio_value=Decimal("100000")
+                portfolio_value=Decimal("100000"),
             )
 
         def get_positions(self) -> list[Position]:
@@ -22,7 +23,14 @@ def test_base_provider_requires_get_historical_bars():
         def get_latest_price(self, symbol: str) -> Decimal:
             return Decimal("100")
 
-        def submit_order(self, symbol: str, side: str, quantity: Decimal, order_type: str = "market", price: Decimal | None = None) -> Order:
+        def submit_order(
+            self,
+            symbol: str,
+            side: str,
+            quantity: Decimal,
+            order_type: str = "market",
+            price: Decimal | None = None,
+        ) -> Order:
             return Order(
                 order_id="test",
                 symbol=symbol,
@@ -30,7 +38,7 @@ def test_base_provider_requires_get_historical_bars():
                 quantity=quantity,
                 price=price,
                 status="filled",
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
 
         def cancel_order(self, order_id: str) -> bool:
@@ -41,9 +49,10 @@ def test_base_provider_requires_get_historical_bars():
 
         # Missing: get_historical_bars and get_order_history
 
+    # Should fail because abstract methods not implemented
     with pytest.raises(TypeError, match="abstract"):
-        # Should fail because abstract methods not implemented
-        provider = IncompleteProvider()
+        IncompleteProvider()
+
 
 def test_base_provider_requires_get_order_history():
     """Concrete provider must implement get_order_history."""
@@ -54,7 +63,7 @@ def test_base_provider_requires_get_order_history():
                 equity=Decimal("100000"),
                 cash=Decimal("100000"),
                 buying_power=Decimal("100000"),
-                portfolio_value=Decimal("100000")
+                portfolio_value=Decimal("100000"),
             )
 
         def get_positions(self) -> list[Position]:
@@ -63,7 +72,14 @@ def test_base_provider_requires_get_order_history():
         def get_latest_price(self, symbol: str) -> Decimal:
             return Decimal("100")
 
-        def submit_order(self, symbol: str, side: str, quantity: Decimal, order_type: str = "market", price: Decimal | None = None) -> Order:
+        def submit_order(
+            self,
+            symbol: str,
+            side: str,
+            quantity: Decimal,
+            order_type: str = "market",
+            price: Decimal | None = None,
+        ) -> Order:
             return Order(
                 order_id="test",
                 symbol=symbol,
@@ -71,7 +87,7 @@ def test_base_provider_requires_get_order_history():
                 quantity=quantity,
                 price=price,
                 status="filled",
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
 
         def cancel_order(self, order_id: str) -> bool:
@@ -80,15 +96,27 @@ def test_base_provider_requires_get_order_history():
         def list_open_orders(self) -> list[Order]:
             return []
 
-        def get_historical_bars(self, symbol: str, start_date: date, end_date: date, timeframe: str = "1Day") -> list[Bar]:
-            return [Bar(symbol="AAPL", timestamp=datetime.now(),
-                       open=Decimal("100"), high=Decimal("101"),
-                       low=Decimal("99"), close=Decimal("100.5"), volume=1000)]
+        def get_historical_bars(
+            self, symbol: str, start_date: date, end_date: date, timeframe: str = "1Day"
+        ) -> list[Bar]:
+            return [
+                Bar(
+                    symbol="AAPL",
+                    timestamp=datetime.now(),
+                    open=Decimal("100"),
+                    high=Decimal("101"),
+                    low=Decimal("99"),
+                    close=Decimal("100.5"),
+                    volume=1000,
+                )
+            ]
 
         # Missing: get_order_history
 
+    # Should fail because abstract methods not implemented
     with pytest.raises(TypeError, match="abstract"):
-        provider = IncompleteProvider()
+        IncompleteProvider()
+
 
 def test_concrete_provider_can_be_instantiated_with_all_methods():
     """Provider with all methods should be instantiable."""
@@ -99,7 +127,7 @@ def test_concrete_provider_can_be_instantiated_with_all_methods():
                 equity=Decimal("100000"),
                 cash=Decimal("100000"),
                 buying_power=Decimal("100000"),
-                portfolio_value=Decimal("100000")
+                portfolio_value=Decimal("100000"),
             )
 
         def get_positions(self) -> list[Position]:
@@ -108,7 +136,14 @@ def test_concrete_provider_can_be_instantiated_with_all_methods():
         def get_latest_price(self, symbol: str) -> Decimal:
             return Decimal("100")
 
-        def submit_order(self, symbol: str, side: str, quantity: Decimal, order_type: str = "market", price: Decimal | None = None) -> Order:
+        def submit_order(
+            self,
+            symbol: str,
+            side: str,
+            quantity: Decimal,
+            order_type: str = "market",
+            price: Decimal | None = None,
+        ) -> Order:
             return Order(
                 order_id="1",
                 symbol=symbol,
@@ -116,7 +151,7 @@ def test_concrete_provider_can_be_instantiated_with_all_methods():
                 quantity=quantity,
                 price=price,
                 status="filled",
-                created_at=datetime.now()
+                created_at=datetime.now(),
             )
 
         def cancel_order(self, order_id: str) -> bool:
@@ -125,10 +160,20 @@ def test_concrete_provider_can_be_instantiated_with_all_methods():
         def list_open_orders(self) -> list[Order]:
             return []
 
-        def get_historical_bars(self, symbol: str, start_date: date, end_date: date, timeframe: str = "1Day") -> list[Bar]:
-            return [Bar(symbol="AAPL", timestamp=datetime.now(),
-                       open=Decimal("100"), high=Decimal("101"),
-                       low=Decimal("99"), close=Decimal("100.5"), volume=1000)]
+        def get_historical_bars(
+            self, symbol: str, start_date: date, end_date: date, timeframe: str = "1Day"
+        ) -> list[Bar]:
+            return [
+                Bar(
+                    symbol="AAPL",
+                    timestamp=datetime.now(),
+                    open=Decimal("100"),
+                    high=Decimal("101"),
+                    low=Decimal("99"),
+                    close=Decimal("100.5"),
+                    volume=1000,
+                )
+            ]
 
         def get_order_history(self, days: int = 7) -> list[Order]:
             return []

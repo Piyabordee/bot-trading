@@ -1,6 +1,6 @@
 [project]
 name = "bot-trading"
-version = "0.1.0"
+version = "0.2.0"
 description = "Paper trading demo bot for strategy validation"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -8,16 +8,24 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "pyyaml>=6.0",
     "requests>=2.31.0",
+    "alpaca-py>=0.9.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
-    "black>=23.0.0",
     "ruff>=0.1.0",
-    "alpaca-trade-api>=3.0.0",
 ]
+
+analysis = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+]
+
+# Note: alpaca-py is in main dependencies above (required for provider to work)
+# Use: pip install -e ".[dev]" to get dev dependencies
+# Or: pip install -e ".[alpaca]" to get just alpaca-py (same as main deps)
 
 [project.scripts]
 bot-trading = "bot_trading.main:main"

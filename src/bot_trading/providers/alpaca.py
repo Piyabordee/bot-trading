@@ -7,10 +7,12 @@ TODO: Implement full order submission and management
 TODO: Add proper error handling for network failures
 TODO: Add retry logic for transient errors
 """
+
 import os
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+from bot_trading.exceptions import APIError, InvalidConfigError
 from bot_trading.providers.base import (
     BaseProvider,
     Account,
@@ -49,12 +51,11 @@ class AlpacaProvider(BaseProvider):
 
         Raises:
             ValueError: If API credentials are not configured
-            ImportError: If alpaca-trade-api is not installed
+            ImportError: If alpaca-py SDK is not installed
         """
         if not ALPACA_AVAILABLE:
             raise ImportError(
-                "alpaca-trade-api is required for AlpacaProvider. "
-                "Install with: pip install alpaca-trade-api"
+                "alpaca-py SDK is required for AlpacaProvider. Install with: pip install alpaca-py"
             )
 
         api_key = os.getenv("ALPACA_API_KEY", "")
@@ -93,14 +94,18 @@ class AlpacaProvider(BaseProvider):
 
         TODO: Implement actual API call
         """
-        raise NotImplementedError("get_positions: TODO - implement when adding full API integration")
+        raise NotImplementedError(
+            "get_positions: TODO - implement when adding full API integration"
+        )
 
     def get_latest_price(self, symbol: str) -> Decimal:
         """Get latest price for a symbol.
 
         TODO: Implement actual API call
         """
-        raise NotImplementedError("get_latest_price: TODO - implement when adding full API integration")
+        raise NotImplementedError(
+            "get_latest_price: TODO - implement when adding full API integration"
+        )
 
     def submit_order(
         self,
@@ -128,7 +133,9 @@ class AlpacaProvider(BaseProvider):
 
         TODO: Implement actual API call
         """
-        raise NotImplementedError("list_open_orders: TODO - implement when adding full API integration")
+        raise NotImplementedError(
+            "list_open_orders: TODO - implement when adding full API integration"
+        )
 
     def get_historical_bars(
         self,
@@ -137,15 +144,137 @@ class AlpacaProvider(BaseProvider):
         end_date: date,
         timeframe: str = "1Day",
     ) -> list[Bar]:
-        """Get historical OHLCV bars.
+        """Get historical OHLCV bars for a symbol.
 
-        TODO: Implement actual API call
+        Args:
+            symbol: Trading symbol (e.g., "AAPL")
+            start_date: Start date for historical data
+            end_date: End date for historical data
+            timeframe: Bar timeframe ("1Minute", "5Minute", "15Minute", "1Hour", "1Day")
+
+        Returns:
+            List of Bar objects with OHLCV data
+
+        Raises:
+            APIError: If API call fails
+            InvalidConfigError: If timeframe is invalid
         """
-        raise NotImplementedError("get_historical_bars: TODO - implement when adding full API integration")
+        from alpaca.data.historical import StockHistoricalDataClient
+        from alpaca.data.requests import StockBarsRequest
+        from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+
+        try:
+            # Map timeframe string to TimeFrame objects
+            # TimeFrame is constructed with (amount, unit)
+            timeframe_map = {
+                "1Minute": TimeFrame(1, TimeFrameUnit.Minute),
+                "5Minute": TimeFrame(5, TimeFrameUnit.Minute),
+                "15Minute": TimeFrame(15, TimeFrameUnit.Minute),
+                "1Hour": TimeFrame(1, TimeFrameUnit.Hour),
+                "1Day": TimeFrame(1, TimeFrameUnit.Day),
+            }
+
+            if timeframe not in timeframe_map:
+                raise InvalidConfigError(
+                    f"Invalid timeframe: {timeframe}. Valid options: {list(timeframe_map.keys())}"
+                )
+
+            tf = timeframe_map[timeframe]
+
+            # Reuse existing credentials to create data client
+            data_client = StockHistoricalDataClient(
+                api_key=self._api_key, secret_key=self._api_secret
+            )
+
+            # Request bars
+            request_params = StockBarsRequest(
+                symbol_or_symbols=symbol, timeframe=tf, start=start_date, end=end_date
+            )
+
+            bars_data = data_client.get_stock_bars(request_params)
+
+            if not bars_data or not hasattr(bars_data, "data") or symbol not in bars_data.data:
+                return []
+
+            bars = []
+            for bar_data in bars_data.data[symbol]:
+                bars.append(
+                    Bar(
+                        symbol=symbol,
+                        timestamp=bar_data.timestamp,
+                        open=Decimal(str(bar_data.open)),
+                        high=Decimal(str(bar_data.high)),
+                        low=Decimal(str(bar_data.low)),
+                        close=Decimal(str(bar_data.close)),
+                        volume=int(bar_data.volume),
+                    )
+                )
+
+            return bars
+
+        except InvalidConfigError:
+            raise
+        except APIError:
+            raise
+        except Exception as e:
+            raise APIError(f"Failed to get historical bars: {e}")
 
     def get_order_history(self, days: int = 7) -> list[Order]:
-        """Get order history.
+        """Get order history for the last N days.
 
-        TODO: Implement actual API call
+        Args:
+            days: Number of days to look back (default: 7)
+
+        Returns:
+            List of Order objects
+
+        Raises:
+            APIError: If API call fails
         """
-        raise NotImplementedError("get_order_history: TODO - implement when adding full API integration")
+        try:
+            from alpaca.trading.client import TradingClient
+            from alpaca.trading.requests import GetOrdersRequest
+
+            end_time = datetime.now()
+            start_time = end_time - timedelta(days=days)
+
+            # Create trading client
+            client = TradingClient(
+                api_key=self._api_key,
+                secret_key=self._api_secret,
+                paper=True,
+            )
+
+            # Use alpaca-py SDK to get orders
+            request_params = GetOrdersRequest(
+                status="all", after=start_time, until=end_time, limit=500
+            )
+
+            orders_data = client.get_orders(filter=request_params)
+
+            orders = []
+            for order_data in orders_data:
+                # Convert API response to Order dataclass
+                # Note: Order model expects 'created_at' but API gives 'filled_at'
+                orders.append(
+                    Order(
+                        order_id=str(order_data.id),
+                        symbol=order_data.symbol,
+                        side=order_data.side.name.lower(),
+                        quantity=Decimal(str(order_data.qty)) if order_data.qty else Decimal("0"),
+                        price=(
+                            Decimal(str(order_data.filled_avg_price))
+                            if order_data.filled_avg_price
+                            else None
+                        ),
+                        status=order_data.status.name.lower(),
+                        created_at=order_data.filled_at or order_data.created_at,
+                    )
+                )
+
+            return orders
+
+        except APIError:
+            raise
+        except Exception as e:
+            raise APIError(f"Failed to get order history: {e}")

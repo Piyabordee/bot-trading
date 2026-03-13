@@ -3,15 +3,17 @@
 All provider adapters must implement this interface to ensure
 consistent behavior across different brokers/exchanges.
 """
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
 
 @dataclass
 class Account:
     """Account information."""
+
     equity: Decimal
     cash: Decimal
     buying_power: Decimal
@@ -21,6 +23,7 @@ class Account:
 @dataclass
 class Position:
     """Open position information."""
+
     symbol: str
     quantity: Decimal
     avg_entry_price: Decimal
@@ -31,6 +34,7 @@ class Position:
 @dataclass
 class Order:
     """Order information."""
+
     order_id: str
     symbol: str
     side: str  # 'buy' or 'sell'
@@ -38,6 +42,28 @@ class Order:
     price: Decimal | None
     status: str
     created_at: datetime
+
+
+@dataclass
+class Bar:
+    """OHLCV price bar for historical data."""
+
+    symbol: str
+    timestamp: datetime
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: int
+
+
+@dataclass
+class EquityPoint:
+    """Equity curve point for backtest results."""
+
+    timestamp: datetime
+    value: Decimal
+    returns_pct: Decimal  # Returns from start of period
 
 
 class BaseProvider(ABC):

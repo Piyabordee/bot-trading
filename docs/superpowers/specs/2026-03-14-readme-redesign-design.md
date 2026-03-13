@@ -1,8 +1,13 @@
 # README Redesign Design Document
 
 **Date:** 2026-03-14
-**Status:** Approved
+**Status:** Draft
+**Version:** 2
 **Author:** Claude (with user collaboration)
+
+## Change Log
+- **v2**: Fixed issues from spec review (LICENSE, test badge, project structure)
+- **v1**: Initial design
 
 ## Overview
 
@@ -38,16 +43,17 @@ Redesign the project README.md to be more beautiful, universally accessible, and
 # AI Trading Risk Analyzer
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-49%20passed-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-passing-success.svg)](tests/)
 
 One-click AI-powered risk analysis for trading decisions.
 ```
 
 **Design Decisions:**
-- Only 3 essential badges: Python version, License, Test status
+- Only 2 essential badges: Python version, Test status
+- No LICENSE badge (LICENSE file to be created separately)
 - No emoji in title
 - Clear, concise tagline
+- Test badge uses generic "passing" instead of specific count (avoids manual updates)
 
 ### Section 2: TL;DR Overview
 ```markdown
@@ -170,20 +176,24 @@ cp .env.example .env
 ```
 bot-trading/
 ├── src/bot_trading/
-│   ├── config/          # Configuration system
-│   ├── providers/       # Broker adapters
-│   ├── risk/            # Risk management
+│   ├── config.py        # Configuration loader
+│   ├── exceptions.py    # Custom exceptions
+│   ├── providers/       # Broker adapters (Base, Alpaca, Mock)
 │   ├── strategy/        # Trading strategies
-│   └── execution/       # Order execution
-├── tests/               # Test suite
+│   ├── execution/       # Order execution
+│   ├── risk/            # Risk limits & checks
+│   └── data/            # Data models
+├── tests/               # Test suite (test_providers/, integration/)
 ├── config/              # Sample configurations
-└── docs/                # Additional documentation
+├── docs/                # Additional documentation
+└── pyproject.toml       # Project dependencies
 ```
 ```
 
 **Design Decisions:**
 - Minimal ASCII tree (no decorations)
-- One-line comments per directory
+- Shows actual structure: config.py as file, not directory
+- One-line comments per directory/module
 
 ### Section 8: Usage & Commands
 ```markdown
@@ -233,13 +243,17 @@ Contributions are welcome. Please:
 ```markdown
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License
 
 ## Disclaimer
 
 This software is a risk analysis tool. Trading decisions are your responsibility.
 Never trade with money you cannot afford to lose.
 ```
+
+**Design Decisions:**
+- No link to LICENSE file (to be created separately)
+- Simple, clear disclaimer
 
 ## Design Principles Applied
 
@@ -250,6 +264,15 @@ Never trade with money you cannot afford to lose.
 5. **No Clutter** — Removed excessive ASCII art and visual noise
 6. **Professional Tone** — Direct, clear, no informal language
 
+## Pre-Implementation Checklist
+
+Before implementing this redesign, complete these steps:
+
+- [ ] Create LICENSE file (MIT)
+- [ ] Archive current README as `README.th.md` (Thai version preservation)
+- [ ] Update `pyproject.toml` description to: "AI Trading Risk Analyzer — One-click risk analysis for trading decisions"
+- [ ] Verify test status for badge accuracy
+
 ## Files to Modify
 
 - **Primary:** `README.md` — Complete rewrite
@@ -258,9 +281,12 @@ Never trade with money you cannot afford to lose.
 
 ## Success Criteria
 
+- [ ] Pre-implementation checklist completed
 - [ ] README is 100% English
 - [ ] Minimal or no emoji usage
 - [ ] Clean, professional appearance
 - [ ] All essential information preserved
 - [ ] Quick Start section works (tested commands)
 - [ ] Links are valid and functional
+- [ ] Project structure matches actual directory layout
+- [ ] LICENSE file created and properly referenced

@@ -1,6 +1,5 @@
 """Tests for base provider interface."""
 import pytest
-from abc import ABC
 from bot_trading.providers.base import BaseProvider
 
 

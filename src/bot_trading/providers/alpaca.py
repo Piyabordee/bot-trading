@@ -9,7 +9,13 @@ TODO: Add retry logic for transient errors
 """
 import os
 from decimal import Decimal
-from typing import cast
+
+from bot_trading.providers.base import (
+    BaseProvider,
+    Account,
+    Position,
+    Order,
+)
 
 # Alpaca SDK is optional for scaffold mode
 # TODO: Uncomment and install alpaca-py when implementing full API integration
@@ -21,13 +27,6 @@ from typing import cast
 # except ImportError:
 #     ALPACA_AVAILABLE = False
 ALPACA_AVAILABLE = True  # Set to True for scaffold stub mode
-
-from bot_trading.providers.base import (
-    BaseProvider,
-    Account,
-    Position,
-    Order,
-)
 
 
 class AlpacaProvider(BaseProvider):

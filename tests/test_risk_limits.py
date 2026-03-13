@@ -1,7 +1,6 @@
 """Tests for risk limits module."""
-import pytest
 from decimal import Decimal
-from bot_trading.risk.limits import RiskLimits, RiskCheckResult
+from bot_trading.risk.limits import RiskLimits
 
 
 def test_risk_limits_blocks_order_exceeding_max_position():

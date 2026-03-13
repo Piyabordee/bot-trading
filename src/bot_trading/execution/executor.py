@@ -12,10 +12,9 @@ TODO: Add order status tracking
 """
 import logging
 from dataclasses import dataclass
-from decimal import Decimal
 
 from bot_trading.providers.base import BaseProvider
-from bot_trading.risk.limits import RiskLimits, RiskCheckResult
+from bot_trading.risk.limits import RiskLimits
 from bot_trading.strategy.base import Signal
 
 

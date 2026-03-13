@@ -1,6 +1,5 @@
 """Tests for base strategy module."""
 import pytest
-from decimal import Decimal
 from bot_trading.strategy.base import BaseStrategy, Signal
 
 

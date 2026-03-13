@@ -1,6 +1,5 @@
 """Tests for configuration module."""
 import os
-import pytest
 from bot_trading.config import Config, get_config
 
 

@@ -120,3 +120,36 @@ class BaseProvider(ABC):
     def list_open_orders(self) -> list[Order]:
         """List all open orders."""
         pass
+
+    @abstractmethod
+    def get_historical_bars(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        timeframe: str = "1Day",
+    ) -> list[Bar]:
+        """Get historical OHLCV bars for a symbol.
+
+        Args:
+            symbol: Trading symbol (e.g., "AAPL")
+            start_date: Start date for historical data
+            end_date: End date for historical data
+            timeframe: Bar timeframe ("1Minute", "5Minute", "15Minute", "1Hour", "1Day")
+
+        Returns:
+            List of Bar objects with OHLCV data
+        """
+        pass
+
+    @abstractmethod
+    def get_order_history(self, days: int = 7) -> list[Order]:
+        """Get order history for the last N days.
+
+        Args:
+            days: Number of days to look back
+
+        Returns:
+            List of Order objects
+        """
+        pass

@@ -8,6 +8,7 @@ TODO: Add proper error handling for network failures
 TODO: Add retry logic for transient errors
 """
 import os
+from datetime import date
 from decimal import Decimal
 
 from bot_trading.providers.base import (
@@ -15,6 +16,7 @@ from bot_trading.providers.base import (
     Account,
     Position,
     Order,
+    Bar,
 )
 
 # Alpaca SDK is optional for scaffold mode
@@ -127,3 +129,23 @@ class AlpacaProvider(BaseProvider):
         TODO: Implement actual API call
         """
         raise NotImplementedError("list_open_orders: TODO - implement when adding full API integration")
+
+    def get_historical_bars(
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
+        timeframe: str = "1Day",
+    ) -> list[Bar]:
+        """Get historical OHLCV bars.
+
+        TODO: Implement actual API call
+        """
+        raise NotImplementedError("get_historical_bars: TODO - implement when adding full API integration")
+
+    def get_order_history(self, days: int = 7) -> list[Order]:
+        """Get order history.
+
+        TODO: Implement actual API call
+        """
+        raise NotImplementedError("get_order_history: TODO - implement when adding full API integration")

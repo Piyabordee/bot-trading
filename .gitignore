@@ -34,3 +34,4 @@ Thumbs.db
 
 # Project specific
 config/*.local.yaml
+.worktrees/

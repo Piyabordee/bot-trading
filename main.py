@@ -10,6 +10,12 @@ import sys
 from pathlib import Path
 from decimal import Decimal
 
+# Load environment variables from .env BEFORE any other imports
+# that might read configuration via os.getenv()
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from bot_trading.config import get_config
 from bot_trading.providers.alpaca import AlpacaProvider
 from bot_trading.risk.limits import RiskLimits

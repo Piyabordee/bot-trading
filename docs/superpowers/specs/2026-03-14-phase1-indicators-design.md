@@ -176,9 +176,14 @@ class BarsToDataFrameConverter:
 
     Handles:
     - Decimal to float conversion (for indicator calculations)
-    - Timestamp to datetime index
+    - Timestamp to datetime index with consistent timezone handling
     - Column naming: 'open', 'high', 'low', 'close', 'volume'
     - Validation (no NaN in prices, sorted by timestamp)
+
+    Timezone Handling:
+    - If Bar timestamps are timezone-aware: preserve timezone
+    - If Bar timestamps are naive: assume UTC and keep naive
+    - All bars in a batch must have consistent timezone awareness
     """
 
     @staticmethod
@@ -191,7 +196,7 @@ class BarsToDataFrameConverter:
         Returns:
             DataFrame with:
             - Columns: 'open', 'high', 'low', 'close', 'volume' (all float except volume is int)
-            - Index: datetime (timezone-aware if input has timezone, else naive)
+            - Index: datetime (preserves input timezone: aware or naive)
             - Sorted by timestamp (ascending)
             - No NaN values in price columns
 
@@ -200,6 +205,17 @@ class BarsToDataFrameConverter:
         """
         if not bars:
             raise InvalidInputError("Cannot convert empty bars list")
+
+        # Check timezone consistency
+        first_tz_aware = bars[0].timestamp.tzinfo is not None
+        for i, bar in enumerate(bars):
+            tz_aware = bar.timestamp.tzinfo is not None
+            if tz_aware != first_tz_aware:
+                raise InvalidInputError(
+                    f"Mixed timezone awareness in bars: bar 0 is "
+                    f"{'aware' if first_tz_aware else 'naive'}, bar {i} is "
+                    f"{'aware' if tz_aware else 'naive'}"
+                )
 
         data = {
             'open': [float(b.open) for b in bars],
@@ -218,6 +234,35 @@ class BarsToDataFrameConverter:
             raise InvalidInputError("Price columns contain NaN values")
 
         return df
+
+    @staticmethod
+    def dataframe_to_bars(df: DataFrame, symbol: str) -> List[Bar]:
+        """Convert DataFrame back to List[Bar].
+
+        Args:
+            df: DataFrame with OHLCV columns and datetime index
+            symbol: Symbol to use for all bars
+
+        Returns:
+            List of Bar objects
+
+        Note:
+            This is the inverse of convert() for incremental updates.
+        """
+        from bot_trading.providers.base import Bar
+
+        bars = []
+        for timestamp, row in df.iterrows():
+            bars.append(Bar(
+                symbol=symbol,
+                timestamp=timestamp,
+                open=Decimal(str(row['open'])),
+                high=Decimal(str(row['high'])),
+                low=Decimal(str(row['low'])),
+                close=Decimal(str(row['close'])),
+                volume=int(row['volume']),
+            ))
+        return bars
 ```
 
 ### 3.4 IndicatorPipeline
@@ -235,17 +280,22 @@ class IndicatorPipeline:
     - Partial failure handling
 
     Caching Strategy:
-    - Each indicator caches its last N output values (N = max required_period)
-    - Cache is stored per (symbol, timeframe) combination
-    - Cache invalidates when indicators are added/removed
-    - Memory limit: 1000 bars per indicator (configurable)
+    - Cache stores the last N bars of computed results (single cache for all indicators)
+    - Cache is keyed by (symbol, timeframe) combination
+    - Cache invalidates when:
+      * Indicators are added/removed
+      * Symbol changes (detected in update())
+      * Explicitly requested via clear_cache()
+    - Memory limit: cache_size bars total (not per indicator)
+    - Default: 1000 bars (configurable)
     """
 
     def __init__(self, cache_size: int = 1000):
         """Initialize pipeline.
 
         Args:
-            cache_size: Maximum bars to cache per indicator
+            cache_size: Maximum number of bars to keep in cache (total, not per indicator)
+                        Larger cache = faster incremental updates but more memory
         """
         self._indicators: Dict[str, BaseIndicator] = {}
         self._cache: Optional[DataFrame] = None
@@ -253,6 +303,37 @@ class IndicatorPipeline:
         self._cache_timeframe: Optional[str] = None
         self._failed_indicators: List[str] = []
         self._cache_size = cache_size
+
+    def add_indicator(self, name: str, indicator: BaseIndicator) -> None:
+        """Add an indicator to the pipeline.
+
+        Args:
+            name: Unique name for this indicator (used as column name)
+            indicator: BaseIndicator instance
+
+        Raises:
+            ValueError: If name already exists
+        """
+        if name in self._indicators:
+            raise ValueError(f"Indicator '{name}' already exists")
+        self._indicators[name] = indicator
+        self._invalidate_cache()
+
+    def remove_indicator(self, name: str) -> None:
+        """Remove an indicator from the pipeline.
+
+        Args:
+            name: Indicator name to remove
+        """
+        self._indicators.pop(name, None)
+        self._invalidate_cache()
+
+    def clear_cache(self) -> None:
+        """Explicitly clear the cache.
+
+        Useful when switching symbols or timeframes.
+        """
+        self._invalidate_cache()
 
     def add_indicator(self, name: str, indicator: BaseIndicator) -> None:
         """Add an indicator to the pipeline.
@@ -357,7 +438,7 @@ class IndicatorPipeline:
             Series with latest indicator values
 
         Raises:
-            IndicatorError: If called before compute() or symbol mismatch
+            IndicatorError: If called before compute() or symbol/timeframe mismatch
 
         Note:
             - Requires prior compute() call to establish cache
@@ -382,9 +463,10 @@ class IndicatorPipeline:
         }
         self._cache.loc[new_bar.timestamp] = new_row
 
-        # Recompute all indicators (incremental optimization TODO)
-        # For now, simpler to recompute on full cached dataset
-        bars = self._dataframe_to_bars(self._cache)
+        # Recompute all indicators using cached data
+        # Use BarsToDataFrameConverter to convert back to bars
+        converter = BarsToDataFrameConverter()
+        bars = converter.dataframe_to_bars(self._cache, symbol=self._cache_symbol)
         df = self.compute(bars)
 
         # Return latest values
@@ -443,20 +525,29 @@ class EMAIndicator(BaseIndicator):
 | Indicator | Parameters | Output Type | Column Name(s) | Use Case |
 |-----------|-----------|-------------|----------------|----------|
 | RSI | period (default: 14) | Series | `rsi_{period}` | Overbought/oversold (>70/<30) |
-| MACD | fast=12, slow=26, signal=9 | DataFrame | `macd_{fast}_{slow}_{signal}`, `macd_{fast}_{slow}_{signal}_signal_line`, `macd_{fast}_{slow}_{signal}_histogram` | Reversal signals |
+| MACD | fast=12, slow=26, signal=9 | DataFrame | `macd`, `macd_signal`, `macd_hist` | Reversal signals |
 
 **Implementation (RSI):**
 ```python
 class RSIIndicator(BaseIndicator):
     def __init__(self, period: int = 14):
+        if period <= 0:
+            raise ValueError("Period must be positive")
         self.period = period
 
     def calculate(self, df: DataFrame) -> Series:
         delta = df['close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=self.period).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=self.period).mean()
-        rs = gain / loss
-        return 100 - (100 / (1 + rs))
+
+        # Handle division by zero: when loss is 0, RSI = 100
+        rs = gain / loss.replace(0, np.nan)
+        rsi = 100 - (100 / (1 + rs))
+
+        # When loss is 0 (no downward movement), RSI = 100
+        rsi[loss == 0] = 100
+
+        return rsi
 
     def required_period(self) -> int:
         return self.period + 1  # Need one extra for diff()
@@ -466,6 +557,10 @@ class RSIIndicator(BaseIndicator):
 ```python
 class MACDIndicator(BaseIndicator):
     def __init__(self, fast: int = 12, slow: int = 26, signal: int = 9):
+        if fast <= 0 or slow <= 0 or signal <= 0:
+            raise ValueError("Periods must be positive")
+        if fast >= slow:
+            raise ValueError("Fast period must be less than slow period")
         self.fast = fast
         self.slow = slow
         self.signal = signal
@@ -479,8 +574,8 @@ class MACDIndicator(BaseIndicator):
 
         result = DataFrame(index=df.index)
         result['macd'] = macd
-        result['signal_line'] = signal_line
-        result['histogram'] = histogram
+        result['macd_signal'] = signal_line
+        result['macd_hist'] = histogram
         return result
 
     def required_period(self) -> int:
@@ -741,7 +836,10 @@ pipeline.add_indicator('rsi_14', RSIIndicator(period=14))
 # Result column: 'sma_20', 'rsi_14'
 
 # Multi-output indicator (MACD)
-# Result columns: 'macd_macd', 'macd_signal_line', 'macd_histogram'
+# Result columns: 'macd', 'macd_signal', 'macd_hist'
+
+# Bollinger Bands (multi-output)
+# Result columns: 'bb_upper', 'bb_middle', 'bb_lower', 'bb_width'
 ```
 
 ---

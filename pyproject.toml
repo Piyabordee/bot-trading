@@ -15,6 +15,7 @@ dependencies = [
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-qt>=4.2.0",  # For Qt testing
     "ruff>=0.1.0",
 ]
 
@@ -23,9 +24,20 @@ analysis = [
     "numpy>=1.24.0",
 ]
 
+gui = [
+    "PyQt6>=6.6.0",
+    "pyqtgraph>=0.13.0",  # Charts
+]
+
+# Full installation includes dev + analysis + gui
+all = [
+    "bot-trading[dev,analysis,gui]",
+]
+
 # Note: alpaca-py is in main dependencies above (required for provider to work)
 # Use: pip install -e ".[dev]" to get dev dependencies
-# Or: pip install -e ".[alpaca]" to get just alpaca-py (same as main deps)
+# Use: pip install -e ".[gui]" to get GUI dependencies
+# Use: pip install -e ".[all]" to get all dependencies
 
 [project.scripts]
 bot-trading = "bot_trading.main:main"

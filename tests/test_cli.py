@@ -19,9 +19,9 @@ def test_cli_runs_analysis(mock_provider, mock_analyzer, capsys):
 
     mock_analyzer.return_value.analyze_with_risk_summary.return_value = "Test Analysis"
 
-    # Run CLI
+    # Run CLI with new subcommand structure
     try:
-        main(["--symbols", "AAPL,MSFT", "--api-key", "test-key"])
+        main(["analyze", "--symbols", "AAPL,MSFT", "--api-key", "test-key"])
     except SystemExit:
         pass  # CLI may exit
 

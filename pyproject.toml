@@ -40,7 +40,8 @@ all = [
 # Use: pip install -e ".[all]" to get all dependencies
 
 [project.scripts]
-bot-trading = "bot_trading.main:main"
+bot-trading = "bot_trading.cli:main"
+bot-trading-gui = "bot_trading.cli:run_gui"
 
 [build-system]
 requires = ["hatchling"]

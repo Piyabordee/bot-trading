@@ -5,10 +5,6 @@ Flow:
 2. Check risk limits
 3. Submit order to provider
 4. Log result
-
-TODO: Implement actual order submission
-TODO: Add retry logic for failed orders
-TODO: Add order status tracking
 """
 
 import logging
@@ -41,9 +37,8 @@ class Executor:
     3. Submit order to provider
     4. Log result
 
-    TODO: Implement actual order submission
-    TODO: Add retry logic for failed orders
-    TODO: Add order status tracking
+    All orders are submitted through the configured provider.
+    Risk checks are performed before every execution.
     """
 
     def __init__(self, provider: BaseProvider, risk_limits: RiskLimits) -> None:
@@ -71,8 +66,10 @@ class Executor:
                 executed=False, signal=signal, reason=f"Invalid action: {signal.action}"
             )
 
-        if not signal.quantity:
-            return ExecutionResult(executed=False, signal=signal, reason="Signal has no quantity")
+        if not signal.quantity or signal.quantity <= 0:
+            return ExecutionResult(
+                executed=False, signal=signal, reason="Invalid quantity"
+            )
 
         # Check risk limits
         size_check = self.risk_limits.check_order_size(signal.quantity)
@@ -83,7 +80,9 @@ class Executor:
             )
 
         # Check for duplicates
-        duplicate_check = self.risk_limits.check_duplicate_order(signal.symbol, signal.action)
+        duplicate_check = self.risk_limits.check_duplicate_order(
+            signal.symbol, signal.action
+        )
         if not duplicate_check.allowed:
             logger.warning(f"Duplicate order blocked: {duplicate_check.reason}")
             return ExecutionResult(
@@ -92,14 +91,32 @@ class Executor:
                 reason=f"Duplicate check failed: {duplicate_check.reason}",
             )
 
-        # TODO: Submit actual order to provider
-        logger.info(
-            f"Would execute {signal.action} {signal.quantity} {signal.symbol} "
-            f"(confidence: {signal.confidence})"
-        )
+        # Submit order to provider
+        try:
+            order = self.provider.submit_order(
+                symbol=signal.symbol,
+                side=signal.action,
+                quantity=signal.quantity,
+                order_type="market",  # Default to market orders
+                price=None,  # Market orders have no price
+            )
 
-        return ExecutionResult(
-            executed=False,  # Until full implementation
-            signal=signal,
-            reason="TODO: Order submission not yet implemented",
-        )
+            logger.info(
+                f"Order submitted: {signal.action} {signal.quantity} {signal.symbol} "
+                f"(order_id: {order.order_id})"
+            )
+
+            return ExecutionResult(
+                executed=True,
+                signal=signal,
+                order_id=order.order_id,
+                reason="",
+            )
+
+        except Exception as e:
+            logger.error(f"Order submission failed: {e}")
+            return ExecutionResult(
+                executed=False,
+                signal=signal,
+                reason=f"Order submission failed: {e}",
+            )

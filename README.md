@@ -1,9 +1,9 @@
 # AI Trading Risk Analyzer
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
-[![Tests](https://img.shields.io/badge/Tests-passing-success.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-157%20passing-success.svg)](tests/)
 
-One-click AI-powered risk analysis for trading decisions.
+AI-powered trading risk analyzer with a desktop GUI for manual trading execution.
 
 ## Overview
 
@@ -16,88 +16,143 @@ Data Sources → AI Analysis → Config Output → Risk Engine
 ```
 
 **Key Features:**
+- Desktop GUI (PyQt6) for manual trading
 - Standardized config schema (AI-friendly, Python-readable)
 - Robust validation with clear error messages
 - Modular architecture for testing and extension
 - Paper trading support for strategy validation
+- Real-time portfolio tracking and notifications
 
 ## Quick Start
 
+### GUI Application (Phase 3)
+
 ```bash
-# Install
-pip install -e ".[dev]"
+# Install GUI dependencies
+pip install -e ".[gui,dev]"
 
-# Configure
-cp .env.example .env
+# Launch GUI (paper mode - default)
+python -m bot_trading.cli gui
 
-# Run tests
-pytest tests/ -v
+# Or use the direct entry point
+bot-trading-gui
 ```
 
-See [Setup](#setup) for detailed configuration.
-
-## Phase 2: AI Integration (Current)
-
-Phase 2 adds AI-powered risk analysis:
-
-- **Data Pipeline**: Fetch market data and calculate technical indicators
-- **AI Client**: Claude API integration with retry logic
-- **Config Schema**: Structured output format (AI-friendly, Python-readable)
-- **Risk Scoring**: Position sizing based on AI analysis
-
-### Quick Start (Phase 2)
+### CLI Analysis (Phase 2)
 
 ```bash
-# Install dependencies
+# Install
 pip install -e ".[dev]"
 
 # Set up Anthropic API key
 export ANTHROPIC_API_KEY="your-key-here"
 
 # Run analysis
-python -m bot_trading.cli --symbols AAPL,MSFT
+python -m bot_trading.cli analyze --symbols AAPL,MSFT
 ```
-
-See [AI Integration Guide](docs/ai-integration-guide.md) for details.
 
 ## Development Status
 
 | Phase | Status | Components |
 |-------|--------|------------|
-| Phase 0 | Complete | Data models, Provider interface, Risk limits, Tests (49 passed, 89% coverage) |
-| Phase 1 | Complete | Config schema, Risk scoring algorithm, Validation module |
-| Phase 2 | Complete | AI integration, Data pipeline, Risk analysis, CLI |
-| Phase 3 | Planned | Live trading, Dashboard, Alerts |
+| Phase 0 | ✅ Complete | Data models, Provider interface, Risk limits |
+| Phase 1 | ✅ Complete | Config schema, Risk scoring algorithm, Validation |
+| Phase 2 | ✅ Complete | AI integration, Data pipeline, Risk analysis, CLI |
+| Phase 3 | ✅ Complete | **Live Trading GUI, Portfolio tracking, Signal execution** |
+
+**Latest: Phase 3 adds a PyQt6 desktop GUI with:**
+- Manual signal entry and execution
+- Real-time portfolio display
+- Paper/Real trading mode toggle
+- Desktop notifications
+- Trade history persistence
 
 ## Architecture
 
-The system consists of five main modules:
+The system consists of seven main modules:
 
 | Module | Purpose |
 |--------|---------|
-| `config/` | Configuration schema and validation (CORE) |
-| `risk/` | Risk scoring and limit enforcement (CORE) |
+| `core/` | **State management, persistence, notifications** |
+| `controllers/` | **App coordination, trading operations, settings** |
+| `gui/` | **PyQt6 desktop interface** |
+| `config/` | Configuration schema and validation |
+| `risk/` | Risk scoring and limit enforcement |
 | `providers/` | Broker adapters (Alpaca, Mock) |
-| `strategy/` | Trading strategy interfaces |
 | `execution/` | Order execution logic |
 
-## Setup
+## GUI Features (Phase 3)
 
-### Requirements
-- Python 3.11+
-- pip or uv for package management
+### Main Window
+- **Account Summary**: Real-time equity, cash, and P&L display
+- **Trading Mode Indicator**: Paper (green) / Real (red) with warnings
+- **Tabbed Interface**: Portfolio, Signals, Orders, Charts, Risk, Market Data
+- **Status Bar**: Mode indicator, refresh button
 
-### Installation
+### Portfolio Panel
+- **Positions Table**: Symbol, quantity, avg price, current price, market value
+- **Auto-refresh**: Updates when portfolio data changes
+
+### Signals Panel
+- **Manual Entry**: Form to add trading signals
+- **Pending Signals**: Table with execute buttons
+- **Validation**: Pre-trade checks before execution
+
+### Settings Dialog
+- **API Keys**: Secure storage for broker credentials
+- **Trading Mode**: Paper/Real toggle with confirmation
+- **Risk Limits**: Configure max position size and exposure
+
+## Usage
+
+### Running the GUI
+
 ```bash
-git clone <your-repo>
-cd bot-trading
-pip install -e ".[dev]"
+# Launch in paper trading mode (default, safe)
+python -m bot_trading.cli gui
+
+# Launch in real trading mode (requires API keys)
+python -m bot_trading.cli gui --mode real
 ```
 
-### Environment
+### Using the GUI
+
+1. **Add a Signal:**
+   - Enter symbol (e.g., AAPL)
+   - Select action (buy/sell)
+   - Enter quantity and optional price
+   - Click "Add to List"
+
+2. **Execute a Signal:**
+   - Click the ▶ button next to a pending signal
+   - Review the execution result
+
+3. **View Portfolio:**
+   - Switch to the Portfolio tab
+   - See real-time positions and P&L
+
+4. **Change Settings:**
+   - Tools → Settings
+   - Configure API keys and trading mode
+
+### Running Tests
+
 ```bash
-cp .env.example .env
-# Edit .env with your API keys
+# All tests
+pytest tests/ -v
+
+# GUI tests only
+pytest tests/gui/ -v
+
+# With coverage
+pytest tests/ --cov=bot_trading --cov-report=html
+```
+
+### Code Quality
+
+```bash
+ruff check src/ tests/
+ruff format src/ tests/
 ```
 
 ## Project Structure
@@ -105,45 +160,53 @@ cp .env.example .env
 ```
 bot-trading/
 ├── src/bot_trading/
-│   ├── config.py        # Configuration loader
-│   ├── exceptions.py    # Custom exceptions
+│   ├── core/            # StateManager, DataStore, NotificationManager
+│   ├── controllers/     # AppController, TradingController, SettingsController
+│   ├── gui/             # PyQt6 desktop interface
+│   │   ├── main_window.py
+│   │   ├── panels/       # Portfolio, Signals, Orders, etc.
+│   │   └── dialogs/      # Settings, Execute Trade
 │   ├── providers/       # Broker adapters (Base, Alpaca, Mock)
 │   ├── strategy/        # Trading strategies
 │   ├── execution/       # Order execution
 │   ├── risk/            # Risk limits & checks
 │   └── data/            # Data models
-├── tests/               # Test suite (test_providers/, integration/)
+├── tests/               # Test suite (157+ passing)
 ├── config/              # Sample configurations
-├── docs/                # Additional documentation
+├── data/                # Runtime data (state, history, signals)
 └── pyproject.toml       # Project dependencies
-```
-
-## Usage
-
-### Running Tests
-```bash
-pytest tests/ -v
-pytest tests/ --cov=bot_trading --cov-report=html
-```
-
-### Code Quality
-```bash
-ruff check src/ tests/
-ruff format src/ tests/
 ```
 
 ## Configuration
 
-Environment variables (see `.env.example`):
+### Trading Modes
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ALPACA_API_KEY` | Alpaca API key | *Required* |
-| `ALPACA_API_SECRET` | Alpaca API secret | *Required* |
-| `ALPACA_BASE_URL` | Alpaca base URL | `https://paper-api.alpaca.markets` |
-| `MAX_POSITION_SIZE` | Max order size | `1000` |
-| `MAX_PORTFOLIO_EXPOSURE` | Max exposure ratio | `0.2` |
-| `DAILY_LOSS_LIMIT` | Daily loss limit | `500` |
+| Mode | Description | Safety |
+|------|-------------|--------|
+| **Paper** | Simulated trading, no real money | Default, safe for testing |
+| **Real** | Live trading with real money | Requires explicit confirmation |
+
+### Environment Variables
+
+```bash
+# For GUI settings persistence
+DATA_DIR="./data"  # Runtime data directory
+
+# For AI analysis (Phase 2)
+ANTHROPIC_API_KEY="your-key-here"
+
+# For real trading (optional)
+ALPACA_API_KEY="your-alpaca-key"
+ALPACA_API_SECRET="your-alpaca-secret"
+```
+
+## Safety Features
+
+1. **Paper Mode Default**: Always starts in paper trading mode
+2. **Real Mode Confirmation**: Requires explicit checkbox to enable real trading
+3. **Pre-Trade Checks**: Validates funds, positions, and risk limits
+4. **Desktop Notifications**: Alerts for all trade executions
+5. **Trade History**: All trades logged to CSV with timestamps
 
 ## Contributing
 
@@ -160,4 +223,5 @@ MIT License
 ## Disclaimer
 
 This software is a risk analysis tool. Trading decisions are your responsibility.
+**Paper trading mode** is recommended for testing. **Real trading mode** uses actual money.
 Never trade with money you cannot afford to lose.

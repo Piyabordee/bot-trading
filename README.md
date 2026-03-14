@@ -36,13 +36,37 @@ pytest tests/ -v
 
 See [Setup](#setup) for detailed configuration.
 
+## Phase 2: AI Integration (Current)
+
+Phase 2 adds AI-powered risk analysis:
+
+- **Data Pipeline**: Fetch market data and calculate technical indicators
+- **AI Client**: Claude API integration with retry logic
+- **Config Schema**: Structured output format (AI-friendly, Python-readable)
+- **Risk Scoring**: Position sizing based on AI analysis
+
+### Quick Start (Phase 2)
+
+```bash
+# Install dependencies
+pip install -e ".[dev]"
+
+# Set up Anthropic API key
+export ANTHROPIC_API_KEY="your-key-here"
+
+# Run analysis
+python -m bot_trading.cli --symbols AAPL,MSFT
+```
+
+See [AI Integration Guide](docs/ai-integration-guide.md) for details.
+
 ## Development Status
 
 | Phase | Status | Components |
 |-------|--------|------------|
 | Phase 0 | Complete | Data models, Provider interface, Risk limits, Tests (49 passed, 89% coverage) |
-| Phase 1 | In Progress | Config schema, Risk scoring algorithm, Validation module |
-| Phase 2 | Planned | AI integration, Data pipeline |
+| Phase 1 | Complete | Config schema, Risk scoring algorithm, Validation module |
+| Phase 2 | Complete | AI integration, Data pipeline, Risk analysis, CLI |
 | Phase 3 | Planned | Live trading, Dashboard, Alerts |
 
 ## Architecture

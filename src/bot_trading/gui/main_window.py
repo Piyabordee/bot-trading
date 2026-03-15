@@ -13,6 +13,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 from bot_trading.controllers.app_controller import AppController
+from bot_trading.gui.panels.portfolio import PortfolioPanel
+from bot_trading.gui.panels.signals import SignalsPanel
 
 
 class MainWindow(QMainWindow):
@@ -60,6 +62,16 @@ class MainWindow(QMainWindow):
         # Tab widget for panels
         self._tab_widget = QTabWidget()
         layout.addWidget(self._tab_widget)
+
+        # Add panels to tab widget
+        self._portfolio_panel = PortfolioPanel(self._state_manager)
+        self._tab_widget.addTab(self._portfolio_panel, "Portfolio")
+
+        self._signals_panel = SignalsPanel(
+            self._state_manager,
+            self._app_controller.trading_controller
+        )
+        self._tab_widget.addTab(self._signals_panel, "Signals")
 
         # Status bar
         self._create_status_bar()
